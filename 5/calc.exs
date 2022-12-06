@@ -93,8 +93,9 @@ defmodule Calc do
     |> Map.update!(to, fn _ -> to_crates end)
   end
 
-  defp actionate_crane(from, to, 0), do: {from, to}
-  defp actionate_crane([first | from], to, i) do
-    actionate_crane(from, [first | to], i - 1)
+  defp actionate_crane(from, to, how_much, acc \\ [])
+  defp actionate_crane(from, to, 0, acc), do: {from, Enum.reverse(acc) ++ to}
+  defp actionate_crane([first | from], to, i, acc) do
+    actionate_crane(from, to, i - 1, [first | acc])
   end
 end
