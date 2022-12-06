@@ -1,9 +1,11 @@
 defmodule Calc do
-  def compute() do
-    File.read!("input")
+  def compute(file_name \\ "input") do
+    File.read!(file_name)
     |> cleanup_input()
     |> Enum.map(&divide_tasks/1)
-    |> Enum.filter(&completely_overlaps?/1)
+    # |> Enum.filter(&completely_overlaps?/1)
+    # |> Enum.filter(&overlaps?/1)
+    |> Enum.filter(fn x -> completely_overlaps?(x) || overlaps?(x) end)
     |> Enum.count()
   end
 
@@ -37,7 +39,12 @@ defmodule Calc do
   end
 
   defp completely_overlaps?(ranges)
-  defp completely_overlaps?([{a1, b1}, {a2, b2}]) when a1 < a2 and b1 > b2, do: true
-  defp completely_overlaps?([{a1, b1}, {a2, b2}]) when a1 > a2 and b1 < b2, do: true
+  defp completely_overlaps?([{a1, b1}, {a2, b2}]) when a1 <= a2 and b1 >= b2, do: true
+  defp completely_overlaps?([{a1, b1}, {a2, b2}]) when a1 >= a2 and b1 <= b2, do: true
   defp completely_overlaps?(_), do: false
+
+  defp overlaps?(ranges)
+  defp overlaps?([{a1, b1}, {a2, b2}]) when a1 <= a2 and b1 >= a2, do: true
+  defp overlaps?([{a1, b1}, {a2, b2}]) when a1 <= b2 and b1 >= b2, do: true
+  defp overlaps?(_), do: false
 end
