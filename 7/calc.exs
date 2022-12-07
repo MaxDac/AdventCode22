@@ -1,4 +1,6 @@
 defmodule Calc do
+  @max_directory_size 100000
+
   defmodule TreeDirectory do
     defstruct name: "",
               current: false,
@@ -41,6 +43,8 @@ defmodule Calc do
     File.read!(file_name)
     |> get_lines()
     |> build_tree()
+    |> get_directories_size()
+    |> get_total_free_up_space()
   end
 
   defp get_lines(input) do
@@ -58,6 +62,8 @@ defmodule Calc do
     current: true
   })
   defp build_tree([], state), do: state
+  defp build_tree(["$ cd .." | next], state), do:
+    build_tree(next, up_one_directory(state))
   defp build_tree(["$ cd " <> directory_name | next], state), do: 
     build_tree(next, change_directory(state, directory_name))
   defp build_tree(["$ ls" | next], state), do: 
@@ -75,15 +81,37 @@ defmodule Calc do
       |> String.split(" ") 
       |> Enum.filter(&filter_empty_lines/1)
 
+    {file_size, _} = Integer.parse(file_size)
+
     add_file(state, file_name, file_size)
   end
+
+  defp up_one_directory(directory = %{directories: []}) do
+    directory
+  end
+
+  defp up_one_directory(directory = %{directories: dirs}) do
+    if Enum.any?(dirs, &(&1.current)) do
+      %TreeDirectory{directory | current: true}
+    else
+      new_directories = 
+        dirs
+        |> Enum.map(&up_one_directory/1)
+      
+      %TreeDirectory{directory | directories: new_directories}
+    end
+  end
   
-  defp change_directory(directory = %TreeDirectory{name: dir_name, directories: directories}, name) do
+  defp change_directory(directory = %TreeDirectory{
+      current: current, 
+      name: dir_name, 
+      directories: directories
+  }, name, parent_current \\ true) do
     new_directories =
       directories
-      |> Enum.map(&change_directory(&1, name))
+      |> Enum.map(&change_directory(&1, name, current))
     
-    current = dir_name == name
+    current = parent_current && dir_name == name
 
     %TreeDirectory{directory | current: current, directories: new_directories}
   end
@@ -120,5 +148,43 @@ defmodule Calc do
       |> Enum.map(&add_file(&1, file_name, file_size))
 
     %TreeDirectory{dir | directories: new_dirs}
+  end
+
+  defp get_directories_size(directory, directories \\ [])
+  defp get_directories_size(%{directories: [], files: files}, directories) do
+    size = get_elements_size(files)
+
+    [size | directories]
+  end
+
+  defp get_directories_size(%{directories: sub_directories, files: files}, directories) do
+    size = get_elements_size(files)
+
+    computed_sub_directories = 
+      sub_directories 
+      # recomputation later, this passes [] because it's considering itself as the root
+      |> Enum.flat_map(&get_directories_size(&1))
+      
+    additional_size = 
+      computed_sub_directories
+      |> Enum.sum()
+
+    new_directories =
+      sub_directories
+      |> Enum.reduce(directories, &get_directories_size/2)
+
+    [size + additional_size | new_directories]
+  end
+
+  defp get_elements_size(elements) do
+    elements
+    |> Enum.map(&(&1.size))
+    |> Enum.sum()
+  end
+
+  defp get_total_free_up_space(directories) do
+    directories
+    |> Enum.filter(&(&1 < @max_directory_size))
+    |> Enum.sum()
   end
 end
