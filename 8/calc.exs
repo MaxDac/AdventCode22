@@ -1,6 +1,10 @@
 defmodule Calc do
   @moduledoc false
 
+  Code.require_file("visibility.exs")
+
+  alias Visibility
+
   def compute(filename \\ "test_input") do
     File.read!(filename)   
     |> interpret_input()
@@ -15,14 +19,20 @@ defmodule Calc do
 
     {height, width} = get_matrix_height(content)
 
-    empty_matrix = create_empty_matrix(height, width)
+    # empty_matrix = create_empty_matrix(height, width)
 
-    empty_matrix
-    |> traverse_left_right(matrix, height, width, get_matrix_element(matrix, 1, 0))
-    |> traverse_right_left(matrix, height, width, get_matrix_element(matrix, 1, width - 1), width - 2)
-    |> traverse_up_down(matrix, height, width, get_matrix_element(matrix, 0, 1))
-    |> traverse_down_up(matrix, height, width, get_matrix_element(matrix, height - 1, 1), height - 2)
-    |> count_matrix(height, width)
+    # count =
+    #   empty_matrix
+    #   |> traverse_left_right(matrix, height, width, get_matrix_element(matrix, 1, 0))
+    #   |> traverse_right_left(matrix, height, width, get_matrix_element(matrix, 1, width - 1), width - 2)
+    #   |> traverse_up_down(matrix, height, width, get_matrix_element(matrix, 0, 1))
+    #   |> traverse_down_up(matrix, height, width, get_matrix_element(matrix, height - 1, 1), height - 2)
+    #   |> count_matrix(height, width)
+
+    visibility_matrix = create_empty_matrix(height, width, 0)
+
+    compute_visibility(visibility_matrix, matrix, height, width)
+    |> max_of_matrix()
   end 
   
   def make_matrix(matrix) do
@@ -96,19 +106,19 @@ defmodule Calc do
     {height, width}
   end
 
-  def create_empty_matrix(level, width, acc \\ [])
+  def create_empty_matrix(level, width, item \\ false, acc \\ [])
 
-  def create_empty_matrix(0, _, acc) do
+  def create_empty_matrix(0, _, _, acc) do
     acc
     |> make_matrix()
   end
 
-  def create_empty_matrix(level, width, acc) do
+  def create_empty_matrix(level, width, item, acc) do
     line = 
       1..width
-      |> Enum.map(fn _ -> false end)
+      |> Enum.map(fn _ -> item end)
 
-    create_empty_matrix(level - 1, width, [line | acc])
+    create_empty_matrix(level - 1, width, item, [line | acc])
   end
 
   def traverse_left_right(result, matrix, height, width, previous, level \\ 1, pivot \\ 1)
@@ -196,5 +206,62 @@ defmodule Calc do
     else
       count_matrix(matrix, width, height, i, j + 1, acc)
     end
+  end
+
+  def compute_visibility(visibility_matrix, matrix, height, width, i \\ 1, j \\ 1)
+  def compute_visibility(visibility_matrix, _, height, _, i, _) when i >= height - 1, do: visibility_matrix
+  def compute_visibility(visibility_matrix, matrix, height, width, i, j) when j >= width - 1, do: 
+    compute_visibility(visibility_matrix, matrix, height, width, i + 1, 1)
+  
+  def compute_visibility(visibility_matrix, matrix, height, width, i, j) do
+    value = get_matrix_point(matrix, i, j)
+
+    top = compute_visibility_point(matrix, value, j, (i - 1)..0, :vertical)
+    bottom = compute_visibility_point(matrix, value, j, (i + 1)..(height - 1), :vertical)
+    left = compute_visibility_point(matrix, value, i, (j - 1)..0, :horizontal)
+    right = compute_visibility_point(matrix, value, i, (j + 1)..(width - 1), :horizontal)
+
+    visibility = top * bottom * left * right
+
+    new_visibility_matrix = 
+      update_matrix_element(visibility_matrix, i, j, visibility)
+
+    compute_visibility(new_visibility_matrix, matrix, height, width, i, j + 1)
+  end
+
+  defp compute_visibility_point(matrix, value, pivot, enum, type) do
+    max = 
+      enum
+      |> Enum.count()
+
+    streak = 
+      enum
+      |> Enum.take_while(fn pointer -> 
+        get_matrix_point(matrix, pivot, pointer, type) < value
+      end)
+      |> Enum.count()
+
+    min(streak + 1, max)
+  end
+
+  defp get_matrix_point(matrix, pivot, pointer, type \\ :horizontal)
+
+  defp get_matrix_point(matrix, pivot, pointer, :vertical) do
+    matrix
+    |> elem(pointer)
+    |> elem(pivot)
+  end
+
+  defp get_matrix_point(matrix, pivot, pointer, _) do
+    matrix
+    |> elem(pivot)
+    |> elem(pointer)
+  end
+
+  defp max_of_matrix(matrix) do
+    Tuple.to_list(matrix)
+    |> Enum.map(&Tuple.to_list/1)
+    |> Enum.map(&Enum.max/1) 
+    |> Enum.max()
   end
 end
