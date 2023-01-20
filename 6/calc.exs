@@ -15,7 +15,6 @@ defmodule Calc do
           |> Enum.count()
 
         if length == 14 do
-          IO.puts "Signal: #{inspect a}"
           i
         else
           {_, rest} = String.split_at(string, 1)

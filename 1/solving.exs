@@ -14,7 +14,6 @@ defmodule Calc do
     |> Enum.sort()
     |> Enum.reverse()
     |> Enum.take(3)
-    |> IO.inspect()
     |> Enum.sum()
   end
 
