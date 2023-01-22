@@ -21,8 +21,13 @@ defmodule Monkey do
   end
 
   @impl true
-  def handle_call({:add_monkeys, monkeys}, _from, state) do
-    {:reply, :ok, %{state | monkeys: monkeys}}
+  def handle_call(:get_items, _from, state = %{items: items}) do
+    {:reply, items, state}
+  end
+
+  @impl true
+  def handle_call(:get_inspections, _from, state = %{checked: checked}) do
+    {:reply, checked, state}
   end
 
   @impl true
@@ -35,30 +40,25 @@ defmodule Monkey do
     items
     |> Enum.each(&inspect_item(&1, state))
 
-    {:reply, [], %{state | 
+    {:reply, :ok, %{state | 
       items: [],
       checked: checked + number_of_inspections
     }}
   end
 
   @impl true
-  def handle_call({:threw, item}, _from, state = %{
+  def handle_cast({:add_monkeys, monkeys}, state) do
+    {:noreply, %{state | monkeys: monkeys}}
+  end
+
+  @impl true
+  def handle_cast({:threw, item}, state = %{
     items: items,
   }) do
     new_items_set = [item | items]
-    {:reply, new_items_set, %{state | items: new_items_set}}
+    {:noreply, %{state | items: new_items_set}}
   end
   
-  @impl true
-  def handle_call(:get_items, _from, state = %{items: items}) do
-    {:reply, items, state}
-  end
-
-  @impl true
-  def handle_call(:get_inspections, _from, state = %{checked: checked}) do
-    {:reply, checked, state}
-  end
-
   def start_link(state) do
     case GenServer.start_link(__MODULE__, state, []) do
       {:ok, pid} ->
@@ -70,7 +70,7 @@ defmodule Monkey do
   end
 
   def add_monkeys(monkey, monkeys) do
-    GenServer.call(monkey, {:add_monkeys, monkeys})
+    GenServer.cast(monkey, {:add_monkeys, monkeys})
   end
 
   def perform_turn(monkey_server) do
@@ -78,7 +78,7 @@ defmodule Monkey do
   end
 
   def throw_item(monkey_server, item) do
-    GenServer.call(monkey_server, {:threw, item})
+    GenServer.cast(monkey_server, {:threw, item})
   end
 
   def get_items(monkey_server) do

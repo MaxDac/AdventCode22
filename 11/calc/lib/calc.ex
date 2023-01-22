@@ -1,7 +1,7 @@
 defmodule Calc do
   @moduledoc false
 
-  @number_or_rounds 10000
+  @number_or_rounds 1000
 
   def compute() do
     monkeys = build_monkeys()
