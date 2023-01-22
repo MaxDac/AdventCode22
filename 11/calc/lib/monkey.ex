@@ -98,8 +98,16 @@ defmodule Monkey do
     if_false: if_false,
     if_true: if_true
   }) do
-    new_worry_level = div(operation.(item), @relief_level)
-    throw_to(monkeys, if test.(new_worry_level) do if_true else if_false end, new_worry_level)
+    equivalent_operation = 
+      if @relief_level == 1 do operation else fn x -> div(operation.(x), @relief_level) end end
+
+    new_item =
+      Item.update_divisibles(item, equivalent_operation)
+
+    throw_to_monkey =
+      if Item.test_ok?(new_item, test) do if_true else if_false end
+
+    throw_to(monkeys, throw_to_monkey, new_item)
   end
 
   defp throw_to(monkeys, monkey_no, item) do

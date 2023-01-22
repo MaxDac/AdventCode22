@@ -1,7 +1,7 @@
 defmodule Calc do
   @moduledoc false
 
-  @number_or_rounds 1000
+  @number_or_rounds 10_000
 
   def compute() do
     monkeys = build_monkeys()
@@ -23,30 +23,30 @@ defmodule Calc do
     monkeys = 
       [
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [79, 98],
+          items: [79, 98] |> Enum.map(&Item.new/1),
           operation: fn x -> x * 19 end,
-          test: fn x -> rem(x, 23) == 0 end,
+          test: 23,
           if_true: 2,
           if_false: 3
         }),
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [54, 65, 75, 74],
+          items: [54, 65, 75, 74] |> Enum.map(&Item.new/1),
           operation: fn x -> x + 6 end,
-          test: fn x -> rem(x, 19) == 0 end,
+          test: 19,
           if_true: 2,
           if_false: 0
         }),
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [79, 60, 97],
+          items: [79, 60, 97] |> Enum.map(&Item.new/1),
           operation: fn x -> x * x end,
-          test: fn x -> rem(x, 13) == 0 end,
+          test: 13,
           if_true: 1,
           if_false: 3
         }),
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [74],
+          items: [74] |> Enum.map(&Item.new/1),
           operation: fn x -> x + 3 end,
-          test: fn x -> rem(x, 17) == 0 end,
+          test: 17,
           if_true: 0,
           if_false: 1
         }),
@@ -65,72 +65,72 @@ defmodule Calc do
       [
         # Monkey 0
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [73, 77],
+          items: [73, 77] |> Enum.map(&Item.new/1),
           operation: fn x -> x * 5 end,
-          test: fn x -> rem(x, 11) == 0 end,
+          test: 11,
           if_true: 6,
           if_false: 5
         }),
 
         # Monkey 1
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [57, 88, 80],
+          items: [57, 88, 80] |> Enum.map(&Item.new/1),
           operation: fn x -> x + 5 end,
-          test: fn x -> rem(x, 19) == 0 end,
+          test: 19,
           if_true: 6,
           if_false: 0
         }),
 
         # Monkey 2
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [61, 81, 84, 69, 77, 88],
+          items: [61, 81, 84, 69, 77, 88] |> Enum.map(&Item.new/1),
           operation: fn x -> x * 19 end,
-          test: fn x -> rem(x, 5) == 0 end,
+          test: 5,
           if_true: 3,
           if_false: 1
         }),
 
         # Monkey 3
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [78, 89, 71, 60, 81, 84, 87, 75],
+          items: [78, 89, 71, 60, 81, 84, 87, 75] |> Enum.map(&Item.new/1),
           operation: fn x -> x + 7 end,
-          test: fn x -> rem(x, 3) == 0 end,
+          test: 3,
           if_true: 1,
           if_false: 0
         }),
 
         # Monkey 4
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [60, 76, 90, 63, 86, 87, 89],
+          items: [60, 76, 90, 63, 86, 87, 89] |> Enum.map(&Item.new/1),
           operation: fn x -> x + 2 end,
-          test: fn x -> rem(x, 13) == 0 end,
+          test: 13,
           if_true: 2,
           if_false: 7
         }),
 
         # Monkey 5
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [88],
+          items: [88] |> Enum.map(&Item.new/1),
           operation: fn x -> x + 1 end,
-          test: fn x -> rem(x, 17) == 0 end,
+          test: 17,
           if_true: 4,
           if_false: 7
         }),
 
         # Monkey 6
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [84, 98, 78, 85],
+          items: [84, 98, 78, 85] |> Enum.map(&Item.new/1),
           operation: fn x -> x * x end,
-          test: fn x -> rem(x, 7) == 0 end,
+          test: 7,
           if_true: 5,
           if_false: 4
         }),
 
         # Monkey 7
         Monkey.start_link(%Monkey.MonkeyState{
-          items: [98, 89, 78, 73, 71],
+          items: [98, 89, 78, 73, 71] |> Enum.map(&Item.new/1),
           operation: fn x -> x + 4 end,
-          test: fn x -> rem(x, 2) == 0 end,
+          test: 2,
           if_true: 3,
           if_false: 2
         }),
