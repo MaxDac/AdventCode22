@@ -1,5 +1,19 @@
 defmodule Monkey do
-  @moduledoc false
+  @moduledoc """
+  This is a sort of class that handles a single Monkey. This uses a GenServer, based on an Erlang process,
+  to simulate the behaviour of a class by sending messages.
+
+  The first part of the GenServer is the base API wiring, by implementing the `GenServer` behaviour.
+
+  The second part is the API for external use, that implements the "class methods" for a particular server
+  PID, that could be thought as an equivalent of the class instance reference.
+
+  The last part is the implementation of the class logic itself.
+
+  The main difference between this implementation and the class is that in the end the "method" equivalents
+  are functions, so they need the "class instance", in this case the server instance PIDs, in input as a 
+  parameter, while normal class methods already have the class instance available.
+  """
 
   @relief_level 1
 
@@ -14,6 +28,14 @@ defmodule Monkey do
               if_false: 0,
               if_true: 0
   end
+
+  # Implementation of the behaviour. This is the basic wiring, where the different functions overrides are
+  # used to respond to different parameters. In particular, the parameters over which the pattern matching
+  # is applied is the first one, the input itself.
+  #
+  # Note how there are two different overrides, the `handle_call` is a synchronous method, meaning that it is
+  # expected to return a value to the caller, while the `handle_cast` defines asynchronous "fire and forget"
+  # calls, something that doesn't exist in normal classes in C#.
 
   @impl true
   def init(state) do
@@ -58,6 +80,15 @@ defmodule Monkey do
     new_items_set = [item | items]
     {:noreply, %{state | items: new_items_set}}
   end
+
+  # This is the "class implementation", the GenServer API callable from the outside.
+  # The `start_link` function starts a new process returning its PID, while the others simply send messages to
+  # the other processes, using the GenServer API; thus, they are acting as a wrappers for the basic Elixir
+  # syntax to handle processes and messages.
+  #
+  # In the analogy, these would be the class methods, while the messing sending would be the actual call 
+  # to a method itself. Note that this happens with independent entities, so the "class" here is in fact
+  # a mixture between a C# class and a Task.
   
   def start_link(state) do
     case GenServer.start_link(__MODULE__, state, []) do
