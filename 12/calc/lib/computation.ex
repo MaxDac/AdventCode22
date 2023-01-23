@@ -3,7 +3,7 @@ defmodule Computation do
 
   def get_quickest_way(grid, visited_grid, width, height) do
     starting_position = {x, y} = Grid.get_starting_position(grid)
-    ending_position = {ex, ey} = Grid.get_ending_position(grid)
+    ending_position = Grid.get_ending_position(grid)
 
     # Initialising the visited_grid
     new_visited_grid =
@@ -11,7 +11,6 @@ defmodule Computation do
       |> Grid.update_grid_element(x, y, %VisibilityMapElement{steps: 0, trail: []})
 
     get_quickest_way_internal(grid, new_visited_grid, width, height, ending_position, [{0, starting_position}])
-    |> Grid.get_grid_element(ex, ey)
   end
 
   defp get_quickest_way_internal(_, visited_grid, _, _, _, []), do: visited_grid

@@ -5,7 +5,7 @@ defmodule Draw do
     draw(Enum.reverse(trail), width, height)
 
   def draw(path, grid_width, grid_height) do
-    get_empty_grid(grid_width, grid_height)
+    Grid.get_empty_grid(grid_width, grid_height, ".")
     |> traverse_path(path)
   end
 
@@ -26,11 +26,5 @@ defmodule Draw do
       {{x1, y}, {_, y}} ->
         traverse_path(Grid.update_grid_element(grid, x1, y, ">"), [next | rest])
     end
-  end
-
-  defp get_empty_grid(width, height) do
-    1..height
-    |> Enum.map(fn _ -> 1..width |> Enum.map(fn _ -> "." end) |> List.to_tuple() end)
-    |> List.to_tuple()
   end
 end

@@ -4,7 +4,7 @@ defmodule Grid do
   The grid is represented by a tuple, representing the y axis, that contains a series of tuples,
   representing the x axis.
   The x axis traverses each tuple inside the tuple from left to right.
-  The y axis traverses the main tuple from top to bottom, instead of the classic "cartesian way".
+  The y axis traverses the main tuple from top to bottom, instead of the classic "cartesian wa @lowest_heightl  
 
   +--> x
   |
@@ -18,9 +18,17 @@ defmodule Grid do
   @lowest_height 97
   @highest_height 122
 
+  def get_lowest_height, do: @lowest_height
+
   def new(list_matrix) do
     list_matrix
     |> Enum.map(&List.to_tuple/1)
+    |> List.to_tuple()
+  end
+
+  defp get_empty_grid(width, height, element) do
+    1..height
+    |> Enum.map(fn _ -> 1..width |> Enum.map(fn _ -> element end) |> List.to_tuple() end)
     |> List.to_tuple()
   end
 
@@ -91,5 +99,66 @@ defmodule Grid do
     grid
     |> Tuple.delete_at(y)
     |> Tuple.insert_at(y, new_row)
+  end
+
+  def filter(grid, f) do
+    width = grid |> elem(0) |> tuple_size()
+    height = tuple_size(grid)
+
+    filter_internal(grid, f, width, height)
+  end
+
+  defp filter_internal(grid, f, width, height, x \\ 0, y \\ 0, acc \\ [])
+  defp filter_internal(_, _, _, height, _, height, acc), do: acc
+  defp filter_internal(grid, f, width, height, width, y, acc), do:
+    filter_internal(grid, f, width, height, 0, y + 1, acc)
+
+  defp filter_internal(grid, f, width, height, x, y, acc) do
+    element = grid |> Grid.get_grid_element(x, y)
+
+    if f.(element) do
+      filter_internal(grid, f, width, height, x + 1, y, [element | acc])
+    else
+      filter_internal(grid, f, width, height, x + 1, y, acc)
+    end
+  end
+
+  def map(grid, f) do
+    width = grid |> elem(0) |> tuple_size()
+    height = tuple_size(grid)
+    empty_grid = get_empty_grid(width, height, nil)
+
+    map_internal(grid, f, width, height, empty_grid)
+  end
+
+  defp map_internal(grid, f, width, height, x \\ 0, y \\ 0, acc)
+  defp map_internal(_, _, _, height, _, height, acc), do: acc
+  defp map_internal(grid, f, width, height, width, y, acc), do:
+    map_internal(grid, f, width, height, 0, y + 1, acc)
+
+  defp map_internal(grid, f, width, height, x, y, acc) do
+    element = grid |> Grid.get_grid_element(x, y) |> f.()
+    new_grid = update_grid_element(acc, x, y, element)
+    map_internal(grid, f, width, height, x + 1, y, new_grid)
+  end
+
+  def merge_grid(grid1, grid2) do
+    width = grid1 |> elem(0) |> tuple_size()
+    height = tuple_size(grid1)
+    empty_grid = get_empty_grid(width, height, nil)
+
+    merge_grid_internal(grid1, grid2, width, height, empty_grid)
+  end
+
+  defp merge_grid_internal(grid1, grid2, width, height, x \\ 0, y \\ 0, acc)
+  defp merge_grid_internal(_, _, _, height, _, height, acc), do: acc
+  defp merge_grid_internal(grid1, grid2, width, height, width, y, acc), do:
+    merge_grid_internal(grid1, grid2, width, height, 0, y + 1, acc)
+
+  defp merge_grid_internal(grid1, grid2, width, height, x, y, acc) do
+    element1 = grid1 |> Grid.get_grid_element(x, y)
+    element2 = grid2 |> Grid.get_grid_element(x, y)
+    new_grid = update_grid_element(acc, x, y, {element1, element2})
+    merge_grid_internal(grid1, grid2, width, height, x + 1, y, new_grid)
   end
 end
