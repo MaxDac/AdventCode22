@@ -1,110 +1,69 @@
 defmodule Computation do
   @moduledoc false
 
-  @max_possible 100_000_000
+  def get_quickest_way(grid, visited_grid, width, height) do
+    starting_position = {x, y} = Grid.get_starting_position(grid)
+    ending_position = {ex, ey} = Grid.get_ending_position(grid)
 
-  def get_quickest_way(grid, buffer_grid, width, height) do
-    starting_position = Grid.get_starting_position(grid)
-    ending_position = Grid.get_ending_position(grid)
+    # Initialising the visited_grid
+    new_visited_grid =
+      visited_grid
+      |> Grid.update_grid_element(x, y, %VisibilityMapElement{steps: 0, trail: []})
 
-    {number_of_steps, path} =
-      get_quickest_way_internal(grid, buffer_grid, width, height, starting_position, ending_position)
-
-    {number_of_steps, path |> Enum.reverse()}
+    get_quickest_way_internal(grid, new_visited_grid, width, height, ending_position, [{0, starting_position}])
+    |> Grid.get_grid_element(ex, ey)
   end
 
-  defp get_quickest_way_internal(grid, buffer_grid, grid_width, grid_height, start_position, end_position, steps \\ 0, from \\ [])
-  defp get_quickest_way_internal(_, _, _, _, {-1, _}, _, _, from), do: {nil, from}
-  defp get_quickest_way_internal(_, _, _, _, {_, -1}, _, _, from), do: {nil, from}
-  defp get_quickest_way_internal(_, _, _, _, {x, y}, {x, y}, steps, from), do: {steps, from}
-  defp get_quickest_way_internal(grid, buffer_grid, grid_width, grid_height, start_position = {start_x, start_y}, {end_x, end_y}, steps, from) do
-    buffer_grid_element = Grid.get_grid_element(buffer_grid, start_x, start_y)
-    
-    {new_buffer_grid, should_continue?} =
-      case buffer_grid_element do
-        # No steps were previously registered
-        nil -> 
-          {
-            Grid.update_grid_element(buffer_grid, start_x, start_y, steps),
-            true
-          }
+  defp get_quickest_way_internal(_, visited_grid, _, _, _, []), do: visited_grid
+  defp get_quickest_way_internal(grid, visited_grid, width, height, ending_point, [{_, starting_point = {x, y}} | queue]) do
+    %VisibilityMapElement{steps: steps, trail: trail} = 
+      Grid.get_grid_element(visited_grid, x, y)
 
-        # The steps previously taken to arrive here were more than the ones needed here, overwrite
-        s when s > steps -> 
-          {
-            Grid.update_grid_element(buffer_grid, start_x, start_y, steps),
-            true
-          }
+    new_steps = steps + 1
+    new_trail = %VisibilityMapElement{
+      steps: new_steps, 
+      trail: [starting_point | trail]
+    }
 
-        # Steps taken are inefficient, stopping elaboration
-        _ -> 
-          {buffer_grid, false}
-      end
+    {new_queue, new_visited_grid} =
+      get_possible_moves(grid, width, height, starting_point)
+      |> Enum.reduce({queue, visited_grid}, fn 
+        #reached endint point
+        ^ending_point, {_, vs} ->
+          {pt_x, pt_y} = ending_point
+          {[], Grid.update_grid_element(vs, pt_x, pt_y, new_trail)}
 
-    if should_continue? do
-      {current, up, down, left, right} = {
-        Grid.get_grid_height(grid, grid_width, grid_height, start_x, start_y),
-        Grid.get_grid_height(grid, grid_width, grid_height, start_x, start_y - 1),
-        Grid.get_grid_height(grid, grid_width, grid_height, start_x, start_y + 1),
-        Grid.get_grid_height(grid, grid_width, grid_height, start_x - 1, start_y),
-        Grid.get_grid_height(grid, grid_width, grid_height, start_x + 1, start_y),
-      }
+        pt = {pt_x, pt_y}, {q, vs} ->
+          case Grid.get_grid_element(visited_grid, pt_x, pt_y) do
+            # Not yet visited, entering current iteration values
+            nil -> {PriorityQueue.add(q, {new_steps, pt}), Grid.update_grid_element(vs, pt_x, pt_y, new_trail)}
 
-      [
-        fn -> 
-          if check_way(current, up, from, {start_x, start_y - 1}) do 
-            get_quickest_way_internal(grid, new_buffer_grid, grid_width, grid_height, {start_x, start_y - 1}, {end_x, end_y}, steps + 1, [start_position | from]) 
-          else 
-            {nil, from} 
-          end 
-        end,
-        fn -> 
-          if check_way(current, down, from, {start_x, start_y + 1}) do 
-            get_quickest_way_internal(grid, new_buffer_grid, grid_width, grid_height, {start_x, start_y + 1}, {end_x, end_y}, steps + 1, [start_position | from]) 
-          else 
-          {nil, from} 
-          end 
-        end,
-        fn -> 
-          if check_way(current, left, from, {start_x - 1, start_y}) do 
-            get_quickest_way_internal(grid, new_buffer_grid, grid_width, grid_height, {start_x - 1, start_y}, {end_x, end_y}, steps + 1, [start_position | from]) 
-          else 
-            {nil, from} 
-          end 
-        end,
-        fn -> 
-          if check_way(current, right, from, {start_x + 1, start_y}) do 
-            get_quickest_way_internal(grid, new_buffer_grid, grid_width, grid_height, {start_x + 1, start_y}, {end_x, end_y}, steps + 1, [start_position | from]) 
-          else 
-            {nil, from} 
-          end 
-        end
-      ]
-      # |> Enum.map(&Task.async/1)
-      # |> Enum.map(&Task.await/1)
-      |> Enum.map(fn f -> f.() end)
-      |> Enum.map(fn
-        {nil, from} -> {@max_possible, from}
-        {x, from} -> {x + 1, from}
+            # Steps in the position lower or equal than the one in this iteration, stop here
+            %{steps: s1} when s1 <= new_steps -> {q, vs}
+
+            # Steps are actually better, but do not add to queue as already traversed
+            _ -> {q, Grid.update_grid_element(vs, pt_x, pt_y, new_trail)}
+          end
       end)
-      |> min_of(fn {x, _} -> x end)
-    else
-      {nil, from}
-    end
+
+    get_quickest_way_internal(grid, new_visited_grid, width, height, ending_point, new_queue)
   end
 
-  defp check_way(_, nil, _, _), do: false
-  defp check_way(current, next, from, next_position) do
-    not(Enum.member?(from, next_position)) && (next == current + 1 || next == current)
+  defp get_possible_moves(grid, width, height, starting_point = {x, y}) do
+    [{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}]
+    |> Enum.filter(&is_move_allowed?(grid, width, height, starting_point, &1))
   end
 
-  defp min_of(list, f)
-  defp min_of([], _), do: nil
-  defp min_of([elem], _), do: elem
-  defp min_of([first | [second | rest]], f) do
-    case {f.(first), f.(second)} do
-      {a, b} when a < b -> min_of([first | rest], f)
-      _ -> min_of([second | rest], f)
-    end
+  defp is_move_allowed?(grid, width, height, starting_point, new_point)
+  defp is_move_allowed?(_, _, _, {_, _}, {-1, _}), do: false
+  defp is_move_allowed?(_, _, _, {_, _}, {_, -1}), do: false
+  defp is_move_allowed?(_, width, _, {_, _}, {new_x, _}) when new_x >= width, do: false
+  defp is_move_allowed?(_, _, height, {_, _}, {_, new_y}) when new_y >= height, do: false
+  defp is_move_allowed?(grid, width, height, starting_point, new_point) do
+    [starting_height, new_height] =
+      [starting_point, new_point]
+      |> Enum.map(fn {x, y} -> Grid.get_grid_height(grid, width, height, x, y) end)
+
+    new_height <= starting_height + 1
   end
 end

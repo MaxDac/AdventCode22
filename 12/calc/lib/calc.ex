@@ -14,13 +14,10 @@ defmodule Calc do
 
     buffer_grid = 
       Grid.new_buffer(width, height) 
-      |> IO.inspect(label: "buffer grid")
 
-    {steps, path} =
-      grid
-      |> Computation.get_quickest_way(buffer_grid, width, height)
-
-    path
-    |> Draw.draw(width, height)
+    grid
+    |> Computation.get_quickest_way(buffer_grid, width, height)
+    # Decomment if you want to draw the path
+    # |> Draw.draw(width, height)
   end
 end

@@ -1,6 +1,9 @@
 defmodule Draw do
   @moduledoc false
 
+  def draw(%VisibilityMapElement{trail: trail}, width, height), do:
+    draw(Enum.reverse(trail), width, height)
+
   def draw(path, grid_width, grid_height) do
     get_empty_grid(grid_width, grid_height)
     |> traverse_path(path)
