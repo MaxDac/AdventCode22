@@ -7,15 +7,18 @@ defmodule Calc do
       |> Input.get_input()
       |> Grid.new()
 
-    {steps, path} =
-      grid
-      |> Grid.get_quickest_way()
-      |> IO.inspect()
-
     {width, height} = {
       tuple_size(grid |> elem(0)),
       tuple_size(grid),
     }
+
+    buffer_grid = 
+      Grid.new_buffer(width, height) 
+      |> IO.inspect(label: "buffer grid")
+
+    {steps, path} =
+      grid
+      |> Computation.get_quickest_way(buffer_grid, width, height)
 
     path
     |> Draw.draw(width, height)
