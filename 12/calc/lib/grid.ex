@@ -161,4 +161,26 @@ defmodule Grid do
     new_grid = update_grid_element(acc, x, y, {element1, element2})
     merge_grid_internal(grid1, grid2, width, height, x + 1, y, new_grid)
   end
+
+  def filter_position(grid, f) do
+    width = grid |> elem(0) |> tuple_size()
+    height = tuple_size(grid)
+
+    filter_position_internal(grid, f, width, height)
+  end
+
+  defp filter_position_internal(grid, f, width, height, x \\ 0, y \\ 0, acc \\ [])
+  defp filter_position_internal(_, _, _, height, _, height, acc), do: acc
+  defp filter_position_internal(grid, f, width, height, width, y, acc), do:
+    filter_position_internal(grid, f, width, height, 0, y + 1, acc)
+
+  defp filter_position_internal(grid, f, width, height, x, y, acc) do
+    element = grid |> Grid.get_grid_element(x, y)
+
+    if f.(element) do
+      filter_position_internal(grid, f, width, height, x + 1, y, [{x, y} | acc])
+    else
+      filter_position_internal(grid, f, width, height, x + 1, y, acc)
+    end
+  end
 end

@@ -1,8 +1,13 @@
 defmodule Computation do
   @moduledoc false
 
-  def get_quickest_way(grid, visited_grid, width, height) do
-    starting_position = {x, y} = Grid.get_starting_position(grid)
+  def get_quickest_way(grid, visited_grid, width, height, start \\ nil) do
+    starting_position = {x, y} = 
+      case start do
+        nil -> Grid.get_starting_position(grid)
+        s -> s
+      end
+
     ending_position = Grid.get_ending_position(grid)
 
     # Initialising the visited_grid

@@ -15,21 +15,23 @@ defmodule Calc do
     buffer_grid = 
       Grid.new_buffer(width, height) 
 
-    {ex, ey} = Grid.get_ending_position(grid)
+    {ex, ey} = 
+      Grid.get_ending_position(grid)
+      |> IO.inspect(label: "ending point")
 
     result =
       grid
-      |> Computation.get_quickest_way(buffer_grid, width, height)
+      |> Computation.get_quickest_way(buffer_grid, width, height, {0, 22})
     # Step 1
     # |> Grid.get_grid_element(ex, ey)
     # |> Grid.filter(fn %VisibilityMapElement{})
     # Decomment if you want to draw the path
     # |> Draw.draw(width, height)
 
-    %VisibilityMapElement{
+    # %VisibilityMapElement{
       # steps: total_steps, 
-      trail: path
-    } = 
+    #  trail: path
+    # } = 
       result
       |> Grid.get_grid_element(ex, ey)
       |> IO.inspect()
@@ -40,7 +42,20 @@ defmodule Calc do
     #   |> Enum.sort(fn {_, %VisibilityMapElement{steps: steps1}}, {_, %VisibilityMapElement{steps: steps2}} -> steps1 > steps2 end)
     #   |> Enum.take(1)
 
-    traverse_path_until_a(grid, path)
+    # traverse_path_until_a(grid, path)
+
+    Grid.filter_position(grid, fn 
+      97 -> true
+      _ -> false
+    end)
+    |> Enum.map(fn position -> Computation.get_quickest_way(grid, Grid.new_buffer(width, height), width, height, position) end)
+    |> Enum.map(&Grid.get_grid_element(&1, ex, ey))
+    |> Enum.filter(fn 
+      nil -> false
+      _ -> true
+    end)
+    |> Enum.map(fn %VisibilityMapElement{steps: steps} -> steps end)
+    |> Enum.min()
   end
 
   defp traverse_path_until_a(grid, path, counter \\ 0)
