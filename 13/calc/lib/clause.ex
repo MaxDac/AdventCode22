@@ -5,6 +5,23 @@ defmodule Clause do
 
   def to_list([], acc, _), do: acc
 
+  # This case is only possible when there are no numbers inside the parenthesis
+  def to_list([[%Parenthesis{number: number}] | _], _, _) do
+    1..number
+    |> Enum.reduce(nil, fn 
+      _, nil -> [] 
+      _, acc -> [acc]
+    end)
+  end
+  
+  def to_list([%Parenthesis{number: number} | _], _, _) do
+    1..number
+    |> Enum.reduce(nil, fn 
+      _, nil -> [] 
+      _, acc -> [acc]
+    end)
+  end
+
   def to_list(%Clause{clause: [[%{number: number}] | rest]}, acc, _) do
     clause_length = length(rest)
     rest = Enum.take(rest, clause_length - 1)

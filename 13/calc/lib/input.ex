@@ -48,9 +48,9 @@ defmodule Input do
     |> Enum.chunk_by(fn x -> x == "[" || x == "]" end)
     # |> IO.inspect()
     |> split_parenthesis()
-    # |> IO.inspect()
+    # |> IO.inspect(label: "after split")
     |> parse_parenthesis()
-    # |> IO.inspect()
+    |> IO.inspect(label: "pre-chunks")
     |> parse_chunks()
     |> IO.inspect(label: "chunks")
     |> Clause.to_list()
@@ -86,7 +86,7 @@ defmodule Input do
     parse_parenthesis(rest, [element | acc])
 
   defp divide_list(list, acc \\ [])
-  defp divide_list([], acc), do: Enum.reverse(acc)
+  defp divide_list([], acc), do: acc
   defp divide_list([el | rest], acc), do: divide_list(rest, [[el] | acc])
 
   defp parse_chunks(chunks, parenthesis \\ 0, previous \\ [], acc \\ nil)
@@ -106,7 +106,8 @@ defmodule Input do
 
   # The clause close with the same number of parenthesis as the opening clause, saving normally
   defp parse_chunks([par = [%Parenthesis{type: "]", number: number}] | rest], number, previous, %Clause{clause: clause}) do
-    parse_chunks(Enum.reverse(previous) ++ [%Clause{clause: Enum.reverse([par | clause])} | rest], 0, [], nil)
+    passing = Enum.reverse(previous) ++ [%Clause{clause: Enum.reverse([par | clause])} | rest]
+    parse_chunks(passing, 0, [], nil)
   end
 
   # The clause close with a greater number of parenthesis as the opening clause, saving while reestablishing a new opening clause
