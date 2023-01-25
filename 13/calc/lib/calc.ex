@@ -3,16 +3,7 @@ defmodule Calc do
   Documentation for `Calc`.
   """
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Calc.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def compute(input \\ "test_input") do
+    Input.parse_input(input)
   end
 end
