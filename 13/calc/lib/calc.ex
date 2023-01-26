@@ -3,16 +3,24 @@ defmodule Calc do
   Documentation for `Calc`.
   """
 
-  @doc """
-  Hello world.
+  def compute(input \\ "test_input") do
+    {_, result} = 
+      Input.parse_input(input)
+      |> Enum.map(fn 
+        "" -> nil
+        x -> 
+          {evaluated, _} = Code.eval_string(x)
+          evaluated
+      end)
+      |> Comparison.build_comparisons()
+      |> Enum.reduce({1, 0}, fn el, {idx, acc} -> 
+        if Comparison.compare(el) == :right do
+          {idx + 1, acc + idx}
+        else
+          {idx + 1, acc}
+        end
+      end)
 
-  ## Examples
-
-      iex> Calc.hello()
-      :world
-
-  """
-  def hello do
-    :world
+    result
   end
 end
