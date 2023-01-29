@@ -5,6 +5,8 @@ defmodule Matrix do
   To facilitate insertion of the rocks, the matrix will initially be a tuple of tuples, but then the lines, 
   traversing the y coordinates instead of the x, will be converted to lists.
   """
+  
+  @type t() :: Tuple.t(list(binary()))
 
   def new(max_x, max_y) do
     1..max_x
@@ -74,6 +76,23 @@ defmodule Matrix do
     grid
     |> Tuple.delete_at(i - 1)
     |> Tuple.insert_at(i - 1, new_line)
+  end
+
+  def update_grid_at(grid, at, substitution) when is_function(substitution) do
+    new_line = 
+      grid
+      |> elem(at)
+      |> substitution.()
+
+    grid
+    |> Tuple.delete_at(at)
+    |> Tuple.insert_at(at, new_line)
+  end
+
+  def update_grid_at(grid, at, new_line) do
+    grid
+    |> Tuple.delete_at(at)
+    |> Tuple.insert_at(at, new_line)
   end
 end
 
