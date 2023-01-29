@@ -6,8 +6,6 @@ defmodule Sand do
   def sand_grain(grid, min_x, max_x, max_y, x \\ @sand_origin_x, offset \\ 0, acc \\ 0)
   # def sand_grain(_, min_x, max_x, _, x, _, acc) when x == min_x or x == max_x, do: acc
   def sand_grain(grid, min_x, max_x, max_y, x, offset, acc) do
-    # :timer.sleep(100)
-
     # IO.puts("x: #{inspect x}, offset: #{inspect offset}")
     x = x - min_x
     max_x = max_x - min_x
@@ -15,10 +13,12 @@ defmodule Sand do
     {_, filled} = split_grid_column_at(grid, max_x, x, offset)
     # |> IO.inspect(label: "split_grid_column_at")
 
-    case length(filled) do
+    case {min_x + x, length(filled)} do
+      # If the grain of sands reach the hole where the sand is falling, return the accumulated sand
+      {@sand_origin_x, ^max_y} -> acc
       # If the length of the filled zone is 0, this means that the grain of sand will fall endlessly into the void
-      0 -> acc
-      filled_length ->
+      {_, 0} -> acc
+      {_, filled_length} ->
         # Computing new offset, the offset should be the filled length, having that the filled lenght has been already
         # computed considering the previous offset.
         new_offset = filled_length
@@ -37,6 +37,7 @@ defmodule Sand do
 
           # end of conditions, middle wins
           _ ->
+            # wait()
             grid = 
               add_sand_to_column(grid, x, max_y - length(filled)) 
               # |> IO.inspect()
@@ -46,6 +47,8 @@ defmodule Sand do
         end
     end 
   end
+
+  defp wait, do: :timer.sleep(100)
 
   @doc """
   Splits the column in the grid identified by the `at` parameter. 
