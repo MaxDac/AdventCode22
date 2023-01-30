@@ -15,19 +15,22 @@ defmodule Calc do
       |> get_max_min()
 
     coordinates
-    |> Enum.map(fn [sensor, beacon] ->
-      Task.async(fn -> Distance.compute_distance(sensor, beacon) end)
+    |> Enum.flat_map(fn [sensor, beacon] ->
+      Distance.compute_distance(sensor, beacon, selected_y)
     end)
-    |> Enum.flat_map(&Task.await(&1))
-    |> MapSet.new()
-    |> MapSet.to_list()
-    |> Enum.filter(fn {_, y} -> y == selected_y end)
+    |> distinct()
     |> Enum.filter(&filter_coordinates(&1, maxes))
     |> Enum.filter(&not_member(items_coordinates, &1))
     |> Enum.count()
   end
 
   defp not_member(list, element), do: not(Enum.member?(list, element))
+
+  defp distinct(list) do
+    list
+    |> MapSet.new()
+    |> MapSet.to_list()
+  end
 
   defp get_max_min(coordinates) do
     {xes, yes} = {
