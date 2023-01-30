@@ -1,7 +1,7 @@
 defmodule Calc do
   @moduledoc false
 
-  def compute(input \\ "test_input", selected_y \\ 10) do
+  def compute(input \\ "test_input", dimension \\ 20) do
     coordinates =
       input
       |> Input.read()
@@ -15,14 +15,8 @@ defmodule Calc do
       |> get_max_min()
 
     coordinates
-    |> Enum.map(fn [sensor, beacon] ->
-      Task.async(fn -> Distance.compute_distance(sensor, beacon, selected_y) end)
-    end)
-    |> Enum.flat_map(&Task.await(&1))
-    |> distinct()
-    # |> Enum.filter(&filter_coordinates(&1, maxes))
-    |> Enum.filter(&not_member(items_coordinates, &1))
-    |> Enum.count()
+    |> Enum.map(fn [sensor, beacon] -> {sensor, beacon, Distance.compute_manhattan_distance(sensor, beacon)} end) 
+    |> Distance.compute_row(dimension)
   end
 
   defp not_member(list, element), do: not(Enum.member?(list, element))
