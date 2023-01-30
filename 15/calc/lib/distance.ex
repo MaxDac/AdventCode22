@@ -10,17 +10,14 @@ defmodule Distance do
   """
   @spec compute_distance(
     sensor_coordinates :: coordinate(),
-    beacon_coordinates :: coordinate(),
-    coordinates :: MapSet.t(coordinate())
-  ) :: MapSet.t(coordinate())
-  def compute_distance(sensor_coordinates = {sx, sy}, beacon_coordinates, acc) do
+    beacon_coordinates :: coordinate()
+  ) :: list(coordinate())
+  def compute_distance(sensor_coordinates = {sx, sy}, beacon_coordinates) do
     distance = compute_manhattan_distance(sensor_coordinates, beacon_coordinates)
 
-    MapSet.new(
-      for x <- (sx - distance)..(sx + distance),
-          y <- (sy - distance)..(sy + distance), 
-          compute_manhattan_distance({x, y}, {sx, sy}) <= distance, do: {x, y})
-    |> MapSet.union(acc)
+    for x <- (sx - distance)..(sx + distance),
+        y <- (sy - distance)..(sy + distance), 
+        compute_manhattan_distance({x, y}, {sx, sy}) <= distance, do: {x, y}
   end
 
   defp compute_manhattan_distance({ax, ay}, {bx, by}) do
