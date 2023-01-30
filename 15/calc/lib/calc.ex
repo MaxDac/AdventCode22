@@ -16,7 +16,7 @@ defmodule Calc do
 
     coordinates
     |> Enum.map(fn [sensor, beacon] -> {sensor, beacon, Distance.compute_manhattan_distance(sensor, beacon)} end) 
-    |> Distance.compute_row(dimension)
+    |> Distance.compute_row(dimension, dimension)
   end
 
   defp not_member(list, element), do: not(Enum.member?(list, element))

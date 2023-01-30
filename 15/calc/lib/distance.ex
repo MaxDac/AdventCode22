@@ -24,9 +24,14 @@ defmodule Distance do
   Part two: instead of computing one line, compute each line at a time, excluding every coordinates scanned by
   the sensor.
   """
-  def compute_row(coordinates, y) do
-    case generate_row_at(y) |> traverse_coordinates(coordinates) do
-      [] -> compute_row(coordinates, y - 1)
+  def compute_row(_, -1, _), do: []
+  def compute_row(coordinates, y, dimension) do
+    if rem(y, 100) == 0 do
+      IO.puts "Computing row #{inspect y}"
+    end
+
+    case generate_row_at(y, dimension) |> traverse_coordinates(coordinates) do
+      [] -> compute_row(coordinates, y - 1, dimension)
       free -> free
     end
   end
@@ -44,8 +49,17 @@ defmodule Distance do
     # IO.inspect(sensor_coordinates, label: "sensor_coordinates")
     case get_sensor_reach_at_y(sensor_coordinates, y, distance) do
       {min, max} ->
-        coordinates
-        |> Enum.filter(fn {x, _} -> x < min && x > max end)
+        # IO.inspect({min, max}, label: "min, max")
+        result =
+          coordinates
+          |> Enum.filter(fn {x, _} -> x < min || x > max end)
+        # |> IO.inspect(label: "filtered collection")
+
+        if rem(y, 10) == 0 do
+          IO.inspect(length(result), label: "length of result at #{inspect y}")
+        end
+        
+        result
       _ ->
         coordinates
     end
@@ -62,14 +76,15 @@ defmodule Distance do
       _ ->
         nil
     end
+    # |> IO.inspect(label: "get_sensor_reach_at_y - result")
   end
 
   def compute_manhattan_distance({ax, ay}, {bx, by}) do
     abs(ax - bx) + abs(ay - by)
   end
 
-  defp generate_row_at(y) do
-    0..4_000_000
+  def generate_row_at(y, dimension) do
+    0..dimension
     |> Enum.map(&{&1, y})
   end
 end
