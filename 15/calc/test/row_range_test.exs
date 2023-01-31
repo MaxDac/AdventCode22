@@ -24,4 +24,28 @@ defmodule RowRangeTest do
   test "range subtract successfully when off the superior limit" do
     assert {10, [{0, 5}]} = RowRange.subtract({10, [{0, 10}]}, {6, 11})
   end
+
+  test "range subtract returns empty array when subtract range exceeds range" do
+    assert {10, []} = RowRange.subtract({10, [{10, 10}]}, {5, 15})
+  end
+
+  test "range with maximum exceeding but minimum leaving one range intact succeeds" do
+    assert {20, [{14, 14}]} = RowRange.subtract({20, [{14, 20}]}, {15, 25})
+  end
+
+  test "range with maximum exceeding and minimum equal to the minimum remaining range succeeds" do
+    assert {20, []} = RowRange.subtract({20, [{14, 20}]}, {14, 25})
+  end
+
+  test "range with minimum exceeding but maximum leaving one range intact succeeds" do
+    assert {20, [{14, 14}]} = RowRange.subtract({20, [{0, 14}]}, {-1, 13})
+  end
+
+  test "range with minimum exceeding and maximum equal to the minimum remaining range succeeds" do
+    assert {20, []} = RowRange.subtract({20, [{0, 14}]}, {-1, 14})
+  end
+
+  test "mono-range gets eliminated" do
+    assert {20, []} = RowRange.subtract({20, [{0, 0}]}, {0, 14})
+  end
 end

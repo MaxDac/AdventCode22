@@ -14,9 +14,12 @@ defmodule Calc do
       items_coordinates
       |> get_max_min()
 
-    coordinates
-    |> Enum.map(fn [sensor, beacon] -> {sensor, beacon, Distance.compute_manhattan_distance(sensor, beacon)} end) 
-    |> Distance.compute_row(dimension, dimension)
+    {x, y} =
+      coordinates
+      |> Enum.map(fn [sensor, beacon] -> {sensor, beacon, Distance.compute_manhattan_distance(sensor, beacon)} end) 
+      |> Distance.compute_row(dimension, dimension)
+
+    x * 4000000 + y
   end
 
   defp not_member(list, element), do: not(Enum.member?(list, element))
