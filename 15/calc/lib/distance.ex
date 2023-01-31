@@ -30,34 +30,38 @@ defmodule Distance do
       IO.puts "Computing row #{inspect y}"
     end
 
-    case generate_row_at(y, dimension) |> traverse_coordinates(coordinates) do
+    case RowRange.new(dimension) |> traverse_coordinates(coordinates, y) do
       [] -> compute_row(coordinates, y - 1, dimension)
-      free -> free
+      [{free, _}] -> {free, y}
     end
   end
 
-  defp traverse_coordinates([], _), do: []
-  defp traverse_coordinates(row, []), do: row
-  defp traverse_coordinates(row, [sensor_coordinate | rest]) do
-    row
-    |> filter_row_at_distance(sensor_coordinate)
-    |> traverse_coordinates(rest)
+  defp traverse_coordinates({_, row_data}, [], _), do: row_data
+  defp traverse_coordinates(row, [sensor_coordinate | rest], y) do
+    if RowRange.empty?(row) do
+      []
+    else
+      row
+      |> filter_row_at_distance(sensor_coordinate, y)
+      |> traverse_coordinates(rest, y)
+    end
+    
   end
 
-  defp filter_row_at_distance([], _), do: []
-  defp filter_row_at_distance(coordinates = [{_, y} | _], {sensor_coordinates, _, distance}) do
+  defp filter_row_at_distance({_, []}, _, _), do: []
+  defp filter_row_at_distance(coordinates, {sensor_coordinates, _, distance}, y) do
     # IO.inspect(sensor_coordinates, label: "sensor_coordinates")
     case get_sensor_reach_at_y(sensor_coordinates, y, distance) do
       {min, max} ->
         # IO.inspect({min, max}, label: "min, max")
         result =
           coordinates
-          |> Enum.filter(fn {x, _} -> x < min || x > max end)
+          |> RowRange.subtract({min, max})
         # |> IO.inspect(label: "filtered collection")
 
-        if rem(y, 10) == 0 do
-          IO.inspect(length(result), label: "length of result at #{inspect y}")
-        end
+        # if rem(y, 10) == 0 do
+        #   IO.inspect(result, label: "length of result at #{inspect y}")
+        # end
         
         result
       _ ->
@@ -81,10 +85,5 @@ defmodule Distance do
 
   def compute_manhattan_distance({ax, ay}, {bx, by}) do
     abs(ax - bx) + abs(ay - by)
-  end
-
-  def generate_row_at(y, dimension) do
-    0..dimension
-    |> Enum.map(&{&1, y})
   end
 end
