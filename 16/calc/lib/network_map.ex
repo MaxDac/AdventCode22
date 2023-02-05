@@ -1,6 +1,9 @@
 defmodule NetworkMap do
   @moduledoc false
 
+  @max_steps 30
+  @check_treshold 5
+
   defstruct value: "",
             rate: 0,
             valves: []
@@ -11,62 +14,97 @@ defmodule NetworkMap do
     valves: list(binary())
   }
 
-  @max_steps 30
+  defmodule NetworkStep do
+    defstruct step: 0,
+              valve_name: "",
+              pressure: 0,
+              releasing: false
 
-  def act(map, current, from \\ nil, step \\ 0, released \\ [])
+    @type t() :: %__MODULE__{
+      step: non_neg_integer(),
+      valve_name: binary(),
+      pressure: non_neg_integer(),
+      releasing: boolean()
+    }
+  end
 
-  def act(_, _, _, @max_steps, released), do: get_pressure_released(released)
+  @spec act(
+    map :: Map.t(NetworkMap.t()), 
+    current :: binary(), 
+    from :: list(binary()), 
+    step :: non_neg_integer()) :: non_neg_integer()
+  def act(map, current, from \\ [], step \\ 0)
   
-  def act(map, current = %{value: value, rate: 0, valves: valves}, from, step, released) do
-    valves
-    |> Enum.filter(&filter_from(&1, from))
-    |> Enum.map(&act(map, map[&1], current, step + 1, [{value, step + 1, 0} | released]))
-    # |> IO.inspect(label: "Walking value 2 at: #{inspect step}")
-    |> get_max()
+  def act(_, _, from, @max_steps) do
+    compute_released(from)
   end
 
-  def act(map, current = %{value: value, rate: rate}, from, step, released) do
-    releasing_values =
-      case {made_step?(released), already_passed?(value, released)} do
-        {_, true} -> []
-        {false, _} -> []
-        _ ->
-          [act(map, current, from, step + 1, [{value, step + 1, rate} | released])]
+  def act(map, current, from, step) do
+    # Going recursively to every possible steps:
+    # Possibility 1: release the valve. This can happen only when the valve has not been released
+    # Possibility 2: spend the minute going in another direction. In this case, the valve is not released.
+
+    %{
+      rate: pressure,
+      valves: current_valves
+    } = map[current]
+
+    releasing =
+      if not(current |> has_been_released?(from)) do
+        new_from = [%NetworkStep{
+          step: step + 1,
+          valve_name: current,
+          pressure: pressure,
+          releasing: true
+        } | from]
+        
+        act(map, current, new_from, step + 1)
+      else
+        0
       end
-      # |> IO.inspect(label: "Releasing value at #{inspect step}")
 
-    walking_value = 
-      act(map, %NetworkMap{current | rate: 0}, from, step, released)
-      # |> IO.inspect(label: "Walking value at #{inspect step}")
+    new_from = [%NetworkStep{
+      step: step + 1,
+      valve_name: current,
+      pressure: pressure
+    } | from]
 
-    [walking_value | releasing_values]
-    |> get_max()
+    paths = 
+      current_valves
+      |> Enum.map(&act(map, &1, new_from, step + 1))
+
+    Enum.max([releasing | paths])
   end
 
-  defp filter_from(_, nil), do: true
-  defp filter_from(item, %{value: value}), do: item != value
+  @doc """
+  Computes the released pressure based on the steps taken.
+  The steps params are a list of tuples, containing the information about the steps taken.
+  """
+  @spec compute_released(steps :: list(NetworkStep.t())) :: non_neg_integer()
+  def compute_released(steps, acc \\ 0)
 
-  defp get_pressure_released(released) do
-    result =
-      released
-      |> Enum.reduce(0, fn {_, step, value}, acc -> acc + value * (@max_steps - step) end)
+  def compute_released([], acc), do: acc
 
-    {result, released}
+  def compute_released([%{pressure: 0} | rest], acc), do: compute_released(rest, acc)
+
+  def compute_released([%{releasing: false} | rest], acc), do: compute_released(rest, acc)
+    
+  def compute_released([%{step: step, pressure: pressure} | rest], acc) do
+    # Computing the total release pressure by multiplying the pressure of the valve by the difference between the
+    # maximum steps possible and the steps taken to get there.
+    # Consider that registering the releasing at turn `n` means that it would actually start releasing after that turn.
+    # For instance, considering max steps as 3, if the first step as a movement, and the second as releasing the valve,
+    # this means that the total release would be equal to max_steps (3) - stet_at_release (2) = 1, times the gas 
+    # released per minute.
+
+    compute_released(rest, (@max_steps - step) * pressure + acc)
   end
 
-  defp made_step?([{_, _, 0} | _]), do: true
-  defp made_step?(_), do: false
-
-  defp already_passed?(location, path) do
-    path
+  def has_been_released?(valve, from) do
+    from
     |> Enum.any?(fn 
-      {^location, _, value} when value > 0 -> true
+      %{valve_name: ^valve, releasing: true} -> true
       _ -> false
     end)
   end
-
-  defp get_max([]), do: {0, []}
-  defp get_max(list), do: 
-    list
-    |> Enum.max(fn {val1, _}, {val2, _} -> val1 > val2 end)
 end

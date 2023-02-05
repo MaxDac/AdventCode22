@@ -5,7 +5,7 @@ defmodule Calc do
     map =
       Input.get_input(input)
 
-    [{_, first} | _] =
+    [{first, _} | _] =
       map
       |> Map.to_list()
 
