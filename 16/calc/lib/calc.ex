@@ -9,7 +9,10 @@ defmodule Calc do
       map
       |> Map.to_list()
 
-    map
-    |> NetworkMap.act(first)
+    {result, path} =
+      map
+      |> PathComputation.act(first)
+
+    {result, path |> Enum.reverse()}
   end
 end
