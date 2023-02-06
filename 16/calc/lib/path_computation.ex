@@ -38,9 +38,10 @@ defmodule PathComputation do
             releasing: true
           } | from]
           
-          act(map, current, new_from, step + 1)
+          [act(map, current, new_from, step + 1)]
         else
-          compute_released(from, from)
+          # Excluding this case from the computation
+          []
         end
 
       new_from = [%NetworkStep{
@@ -53,7 +54,7 @@ defmodule PathComputation do
         current_valves
         |> Enum.map(&act(map, &1, new_from, step + 1))
 
-      [releasing | paths]
+      releasing ++ paths
       |> Enum.max(fn {x, _}, {y, _} -> x > y end)
     end
   end
